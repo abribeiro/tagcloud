@@ -55,7 +55,7 @@ svgBubbleGen w h d = [svgCircle ((fromIntegral w/2, fromIntegral h/2), fromInteg
 -- Gera string representando um circulo em SVG. A cor do circulo esta fixa. 
 -- TODO: Alterar esta funcao para mostrar um circulo de uma cor fornecida como parametro.
 svgCircle :: Circle -> String
-svgCircle ((x,y),r)
+svgCircle ((x,y),r)	
 	| r <= 0.5 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(44,122,245)\" />\n" x y r
 	| r > 0.5 && r <= 1 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(12,222,45)\" />\n" x y r
 	| r > 1 && r <= 1.5 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(222,156,45)\" />\n" x y r
@@ -72,7 +72,7 @@ svgCircle ((x,y),r)
 	| r > 35 && r <= 40 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(111,122,145)\" />\n" x y r
 	| r > 40 && r <= 45 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(55,122,205)\" />\n" x y r
 	| r > 45 && r <= 50 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(1,222,245)\" />\n" x y r
-	| r > 50 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(167,212,45)\" />\n" x y r
+	| r > 50 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"50.1\" fill=\"rgb(167,212,45)\" />\n" x y -- maior raio = 50.1
 
 -- Configura o viewBox da imagem e coloca retangulo branco no fundo
 svgViewBox :: Int -> Int -> String
