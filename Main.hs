@@ -4,19 +4,17 @@
 --}
 
 
-module Main where
-
-import Text.Printf -- Oba, Haskell tem printf! :-)
+module Main wimport Text.Printf -- Oba, Haskell tem printf! :-)
 
 type Point     = (Float,Float)
 type Color     = (Int,Int,Int)
 type Circle    = (Point,Float)
 
 imageWidth :: Int
-imageWidth = 360
+imageWidth = 350
 
 imageHeight :: Int
-imageHeight = 360
+imageHeight = 350
 
 
 -- Funcao principal que faz leitura do dataset e gera arquivo SVG
@@ -43,14 +41,23 @@ svgCloudGen w h dataset =
         "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n" ++ 
         "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n" ++
         (svgViewBox w h) ++
-        (concat (svgBubbleGen w h dataset)) ++ "</svg>\n"
+        (concat (gera w h 0 dataset)) ++ "</svg>\n"
 
 
 -- Esta funcao deve gerar a lista de circulos em formato SVG.
 -- A implementacao atual eh apenas um teste que gera um circulo posicionado no meio da figura.
 -- TODO: Alterar essa funcao para usar os dados do dataset.
-svgBubbleGen:: Int -> Int -> [Int] -> [String]
-svgBubbleGen w h d = [svgCircle ((fromIntegral w/2, fromIntegral h/2), fromIntegral (head d)/10)] 
+
+gera :: Int -> Int -> Int -> [Int] -> [String]
+gera w h ad [] = []
+gera w h ad (d:s)
+	| ad == 0 = svgBubbleGen w h d 0 : gera w h ad s
+	| otherwise = svgBubbleGen w h d ad : gera w h ad s
+	where ad = d
+	
+
+svgBubbleGen:: Int -> Int -> Int -> Int -> String
+svgBubbleGen w h d ad = svgCircle ((fromIntegral w/2, fromIntegral h/2), fromIntegral d/10+1)
 
 -- Gera string representando um circulo em SVG. A cor do circulo esta fixa. 
 -- TODO: Alterar esta funcao para mostrar um circulo de uma cor fornecida como parametro.
@@ -79,4 +86,4 @@ svgViewBox :: Int -> Int -> String
 svgViewBox w h =
         printf  "<svg width=\"%d\" height=\"%d\" viewBox=\"0 0 %d %d\"" w h w h ++ 
                 " version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\">\n" ++
-        printf "<rect x=\"0\" y=\"0\" width=\"%d\" height=\"%d\" style=\"fill:white;\"/>\n" w h
+        printf "<rect x=\"0\" y=\"0\" width=\"%d\" height=\"%d\" style=\"fill:black;\"/>\n" w h
