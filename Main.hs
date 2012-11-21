@@ -4,7 +4,9 @@
 --}
 
 
-module Main wimport Text.Printf -- Oba, Haskell tem printf! :-)
+module Main where
+
+import Text.Printf -- Oba, Haskell tem printf! :-)
 
 type Point     = (Float,Float)
 type Color     = (Int,Int,Int)
@@ -52,12 +54,12 @@ gera :: Int -> Int -> Int -> [Int] -> [String]
 gera w h ad [] = []
 gera w h ad (d:s)
 	| ad == 0 = svgBubbleGen w h d 0 : gera w h ad s
-	| otherwise = svgBubbleGen w h d ad : gera w h ad s
+	| otherwise = svgBubbleGen w h d ad : gera w h d s
 	where ad = d
 	
 
 svgBubbleGen:: Int -> Int -> Int -> Int -> String
-svgBubbleGen w h d ad = svgCircle ((fromIntegral w/2, fromIntegral h/2), fromIntegral d/10+1)
+svgBubbleGen w h d ad = svgCircle (( fromIntegral (w + ad)/2 * cos (fromIntegral ad), fromIntegral (h + ad)/2 * sin (fromIntegral ad)), fromIntegral d/10+5)
 
 -- Gera string representando um circulo em SVG. A cor do circulo esta fixa. 
 -- TODO: Alterar esta funcao para mostrar um circulo de uma cor fornecida como parametro.
@@ -79,7 +81,8 @@ svgCircle ((x,y),r)
 	| r > 35 && r <= 40 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(111,122,145)\" />\n" x y r
 	| r > 40 && r <= 45 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(55,122,205)\" />\n" x y r
 	| r > 45 && r <= 50 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(1,222,245)\" />\n" x y r
-	| r > 50 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"50.1\" fill=\"rgb(167,212,45)\" />\n" x y -- maior raio = 50.1
+	| r > 50 && r <= 65 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(167,212,45)\" />\n" x y r
+	| r > 65 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"90.1\" fill=\"rgb(16,12,65)\" />\n" x y -- Maior raio = 90 
 
 -- Configura o viewBox da imagem e coloca retangulo branco no fundo
 svgViewBox :: Int -> Int -> String
