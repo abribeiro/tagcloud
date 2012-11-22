@@ -8,16 +8,17 @@ module Main where
 
 import Text.Printf -- Oba, Haskell tem printf! :-)
 import System.Random
+import Data.List
 
 type Point     = (Float,Float)
 type Color     = (Int,Int,Int)
 type Circle    = (Point,Float)
 
 imageWidth :: Int
-imageWidth = 350
+imageWidth = 400
 
 imageHeight :: Int
-imageHeight = 350
+imageHeight = 400
 
 
 -- Funcao principal que faz leitura do dataset e gera arquivo SVG
@@ -44,49 +45,37 @@ svgCloudGen w h dataset =
         "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n" ++ 
         "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n" ++
         (svgViewBox w h) ++
-        (concat (gera 175.0 175.0 50 dataset)) ++ "</svg>\n"
+        (concat (gera 200.0 200.0 10.0 dataset)) ++ "</svg>\n"
 
 
--- Esta funcao deve gerar a lista de circulos em formato SVG.
--- A implementacao atual eh apenas um teste que gera um circulo posicionado no meio da figura.
--- TODO: Alterar essa funcao para usar os dados do dataset.
-{-
-espiral :: [Int] -> [Int]
-espiral d = let
-	ang = getStdRandom (randomR (0, 360))
-	antx = 175
-	anty = 175
-	in [ x | x <- (ang/pi)*180
--}
 
---rN :: IO a -> Int 
---rN a = getStdRandom (randomR (0, a :: Int))
+spiralw :: Float -> Float -> Float -> Float
+spiralw x r a = abs(x+(a*(cos a)))
 
-gera :: Float -> Float -> Int -> [Int] -> [String]
+spiralh :: Float -> Float -> Float -> Float
+spiralh y r a = abs(y+(a*(sin a)))
+
+gera :: Float -> Float -> Float -> [Int] -> [String]
 gera w h ad [] = []
-gera w h ad (d:s) = let
-	x = spiralw w ad
-	y = spiralh h ad
+gera w h ad (d:s) = let	
 	r = fromIntegral d/10+5
-	ad = ad+10
-	in svgBubbleGen x y r : gera (w + x) (h + y) ad s
+	x = spiralw w r ad
+	y = spiralh h r ad
+	in svgBubbleGen x y r : gera x y (ad + 10) s
 	
---gera w h ad (d:s) =	svgBubbleGen w h d ad : gera w h (ad + 10) s
-	
-	
-spiralw :: Float -> Int -> Float
-spiralw x r = abs(x/2 * cos (fromIntegral 360/pi * 180))
-
-spiralh :: Float -> Int -> Float
-spiralh y r = abs(y/2 * sin (fromIntegral 360/pi * 180))
 
 svgBubbleGen:: Float -> Float -> Float -> String
-svgBubbleGen w h r = svgCircle ((w, h), r)
+svgBubbleGen w h r = let
+	rN = 255
+	in svgCircle ((w, h), r) (rN,rN,rN) 
 	
 -- Gera string representando um circulo em SVG. A cor do circulo esta fixa. 
 -- TODO: Alterar esta funcao para mostrar um circulo de uma cor fornecida como parametro.
-svgCircle :: Circle -> String
-svgCircle ((x,y),r)	
+svgCircle :: Circle -> Color -> String
+svgCircle ((x,y),d)	(r,b,g)
+	| d > 60 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"60\" fill=\"rgb(%d,%d,%d)\" />\n" x y r b g
+	| otherwise = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(%d,%d,%d)\" />\n" x y d r b g
+	{-	
 	| r <= 5.5 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(44,122,245)\" />\n" x y r
 	| r > 5.5 && r <= 6 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(12,222,45)\" />\n" x y r
 	| r > 6 && r <= 11.5 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(22,156,45)\" />\n" x y r
@@ -105,6 +94,7 @@ svgCircle ((x,y),r)
 	| r > 72 && r <= 77 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(1,222,245)\" />\n" x y r
 	| r > 77 && r <= 82 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(167,212,45)\" />\n" x y r
 	| r > 82 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"90.1\" fill=\"rgb(16,12,65)\" />\n" x y -- Maior raio = 90 
+	-}
 	
 -- Configura o viewBox da imagem e coloca retangulo branco no fundo
 svgViewBox :: Int -> Int -> String
