@@ -52,38 +52,42 @@ svgCloudGen w h dataset =
 
 gera :: Int -> Int -> Int -> [Int] -> [String]
 gera w h ad [] = []
-gera w h ad (d:s)
-	| ad == 0 = svgBubbleGen w h d 0 : gera w h ad s
-	| otherwise = svgBubbleGen w h d ad : gera w h d s
-	where ad = d
+gera w h ad (d:s) = svgBubbleGen w h d ad : gera w h (head s) s
 	
+spiralw :: Int -> Int -> Float
+spiralw x r = fromIntegral r/2
+
+spiralh :: Int -> Int -> Float
+spiralh y r = fromIntegral r/2
 
 svgBubbleGen:: Int -> Int -> Int -> Int -> String
-svgBubbleGen w h d ad = svgCircle (( fromIntegral (w + ad)/2 * cos (fromIntegral ad), fromIntegral (h + ad)/2 * sin (fromIntegral ad)), fromIntegral d/10+5)
+svgBubbleGen w h d ad 
+	| d >= 82 = svgCircle (( (spiralw w ad), (spiralh h ad)), fromIntegral 90)
+	| otherwise = svgCircle (( (spiralw w ad), (spiralh h ad)), fromIntegral d/10+5)
 
 -- Gera string representando um circulo em SVG. A cor do circulo esta fixa. 
 -- TODO: Alterar esta funcao para mostrar um circulo de uma cor fornecida como parametro.
 svgCircle :: Circle -> String
 svgCircle ((x,y),r)	
-	| r <= 0.5 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(44,122,245)\" />\n" x y r
-	| r > 0.5 && r <= 1 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(12,222,45)\" />\n" x y r
-	| r > 1 && r <= 1.5 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(222,156,45)\" />\n" x y r
-	| r > 1.5 && r <= 3 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(0,252,177)\" />\n" x y r
-	| r > 3 && r <= 5 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(2,22,45)\" />\n" x y r
-	| r > 5 && r <= 7 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(15,202,55)\" />\n" x y r
-	| r > 7 && r <= 10 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(51,102,255)\" />\n" x y r
-	| r > 10 && r <= 13 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(255,102,0)\" />\n" x y r
-	| r > 13 && r <= 16 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(255,152,120)\" />\n" x y r
-    | r > 16 && r <= 20 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(2,22,45)\" />\n" x y r
-	| r > 20 && r <= 25 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(211,22,245)\" />\n" x y r
-	| r > 25 && r <= 30 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(211,222,245)\" />\n" x y r
-	| r > 30 && r <= 35 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(11,22,45)\" />\n" x y r
-	| r > 35 && r <= 40 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(111,122,145)\" />\n" x y r
-	| r > 40 && r <= 45 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(55,122,205)\" />\n" x y r
-	| r > 45 && r <= 50 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(1,222,245)\" />\n" x y r
-	| r > 50 && r <= 65 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(167,212,45)\" />\n" x y r
-	| r > 65 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"90.1\" fill=\"rgb(16,12,65)\" />\n" x y -- Maior raio = 90 
-
+	| r <= 5.5 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(44,122,245)\" />\n" x y r
+	| r > 5.5 && r <= 6 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(12,222,45)\" />\n" x y r
+	| r > 6 && r <= 11.5 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(222,156,45)\" />\n" x y r
+	| r > 11.5 && r <= 17 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(0,252,177)\" />\n" x y r
+	| r > 17 && r <= 22 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(2,22,45)\" />\n" x y r
+	| r > 22 && r <= 27 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(15,202,55)\" />\n" x y r
+	| r > 27 && r <= 32 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(51,102,255)\" />\n" x y r
+	| r > 32 && r <= 37 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(255,102,0)\" />\n" x y r
+	| r > 37 && r <= 42 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(255,152,120)\" />\n" x y r
+    | r > 42 && r <= 47 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(2,22,45)\" />\n" x y r
+	| r > 47 && r <= 52 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(211,22,245)\" />\n" x y r
+	| r > 52 && r <= 57 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(211,222,245)\" />\n" x y r
+	| r > 57 && r <= 62 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(11,22,45)\" />\n" x y r
+	| r > 62 && r <= 67 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(111,122,145)\" />\n" x y r
+	| r > 67 && r <= 72 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(55,122,205)\" />\n" x y r
+	| r > 72 && r <= 77 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(1,222,245)\" />\n" x y r
+	| r > 77 && r <= 82 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(167,212,45)\" />\n" x y r
+	| r > 82 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"90.1\" fill=\"rgb(16,12,65)\" />\n" x y -- Maior raio = 90 
+	
 -- Configura o viewBox da imagem e coloca retangulo branco no fundo
 svgViewBox :: Int -> Int -> String
 svgViewBox w h =
