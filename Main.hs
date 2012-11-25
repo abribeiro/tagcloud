@@ -1,25 +1,22 @@
-{--
-        Esqueleto de programa para geraÃ§Ã£o de bubble cloud em Haskell.
-        Mais informaÃ§Ãµes em: http://www.inf.ufsm.br/~andrea/elc117-2012b
---}
-
-
 module Main where
 
 import Text.Printf -- Oba, Haskell tem printf! :-)
-import System.Random
-import Control.Monad
+import Data.List
+--import System.Random
+
 
 type Point     = (Float,Float)
 type Color     = (Int,Int,Int)
 type Circle    = (Point,Float)
 
-imageWidth :: Int
-imageWidth = 600
+imageWidth :: Float
+imageWidth = 350
 
-imageHeight :: Int
-imageHeight = 600
+imageHeight :: Float
+imageHeight = 350
 
+cons :: Float
+cons = (imageWidth + imageHeight) / 10000 * 0.9
 
 -- Funcao principal que faz leitura do dataset e gera arquivo SVG
 main :: IO ()
@@ -40,72 +37,91 @@ readInts ss = map read ss
 
 
 -- Gera o documento SVG da tag cloud, concatenando cabecalho, conteudo e rodape
-svgCloudGen :: Int -> Int -> [Int] -> String
+svgCloudGen :: Float -> Float -> [Int] -> String
 svgCloudGen w h dataset = 
         "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n" ++ 
         "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n" ++
-        (svgViewBox w h) ++
-        (concat (gera 300 300 0 0 dataset)) ++ "</svg>\n"
+        (svgViewBox w h) ++ concat (gera dataset) ++ "</svg>\n"
 
 
+spiral :: Float -> Point
+spiral a = (x+a*(cos a), y+a*(sin a))
+	where
+	x = imageWidth/2
+	y = imageHeight/2
+	
 
-spiralw :: Float -> Float -> Float -> Float -> Float
-spiralw x r a z  = abs(x+a*(cos a))
+intersecta :: Circle -> [Circle] -> Bool
+intersecta ((x2,y2),r2) [] = False
+intersecta ((x2,y2),r2) (((x1,y1),r1):lc)
+	| d <= a = True
+	| d > a  = intersecta ((x2,y2),r2) lc
+	where 
+	d = sqrt ((y2 - y1)^2 + (x2 - x1)^2) - 0.5 -- -0.5 = 0.5 espaçamento de tolerancia pra nao parecerem circulos grudados
+	a = r1 + r2
 
+calculaRaio :: Int -> Float
+calculaRaio d = (sqrt (fromIntegral d)) * 1.5 + 1
 
-spiralh :: Float -> Float -> Float -> Float -> Float
-spiralh y r a z= abs(y+a*(sin a))
+geraLista :: [Int] -> [Circle]
+geraLista [] = []
+geraLista (d:[]) = [(spiral 0, calculaRaio d)] -- Primeiro elemento
+geraLista ds = (circulosAnteriores ++ [novoCirc circulosAnteriores r 0]) -- Cria a lista a partir dos ultimos elementos pro primeiro.
+	where
+	circulosAnteriores = geraLista (init ds)
+	r = calculaRaio (last ds)
 
-gera :: Float -> Float -> Float -> Int -> [Int] -> [String]
-gera w h c z [] = []
-gera w h c z (d:s) = let
-	pr = fromIntegral z/10+5
-	r = fromIntegral d/10+5 --soma 5 em cada raio dividido por 10 para nao ficar bolas muito pequenas	
-	x = spiralw w r c pr
-	y = spiralh h r c pr
-	in svgBubbleGen x y r : gera x y (c+0.2) (head s) s -- variacao da curva 0.2
+novoCirc :: [Circle] -> Float -> Float -> Circle
+novoCirc lc r2 a
+	| intersects == True = novoCirc lc r2 (a + cons) -- Se tem interseção cria um novo circulo
+	| intersects == False = ((newPos), r2) -- Se não tem retorna o ponto criado
+	where
+	newPos = spiral (a + cons)
+	intersects = intersecta (newPos, r2) lc
 
---rN :: IO Int
---rN = randomRIO (0, 255::Int)
+gera :: [Int] -> [String]
+gera [] = []
+gera d = svgBubbleGen (geraLista d)
 
--- svgCircle ((w, h), r)
-svgBubbleGen:: Float -> Float -> Float -> String
-svgBubbleGen w h r   
-	| (w+r) > 600.0 = svgCircle ((w-((w+r*2)-600), h), r) 
-	| (h+r) > 600.0 = svgCircle ((w,h-((h+r*2)-600)), r) 
-	| h < 600.0 = svgCircle ((w,h), r)
-	| w < 600.0 = svgCircle ((w,h), r)
+svgBubbleGen:: [Circle] -> [String]
+svgBubbleGen [] = []
+svgBubbleGen (a:b) = svgCircle (fst a, snd a) ((floor (foldr (*) 3 (take 1 (iterate (1.1*) (snd a))))),(floor (foldr (/) 5 (take 4 (iterate (2.5*) (snd a))))),(floor (foldr (/) 2.2 (take 3 (iterate (2.5*) (snd a)))))) : svgBubbleGen b
 
+	
 -- Gera string representando um circulo em SVG. A cor do circulo esta fixa. 
 -- TODO: Alterar esta funcao para mostrar um circulo de uma cor fornecida como parametro.
-svgCircle :: Circle -> String
-svgCircle ((x,y),r)	
-	{-| d > 60 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"60\" fill=\"rgb(%d,%d,%d)\" />\n" x y r b g
-	| otherwise = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(%d,%d,%d)\" />\n" x y d r b g
+svgCircle :: Circle -> (Int, Int, Int) -> String
+svgCircle ((x,y),d) (r,g,b) = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(%d,%d,%d)\" />\n" x y d t s v
+	where
+	t = b + g
+	s = g + r
+	v = r + b
+
+	{-
+	| r > 5.00 && r <= 5.02 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(153,225,153)\" />\n" x y a
+	| r > 5.02 && r <= 5.04 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(229,204,255)\" />\n" x y a
+	| r > 5.04 && r <= 5.06 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(255,229,204)\" />\n" x y a
+	| r > 5.06 && r <= 5.08 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(102,178,225)\" />\n" x y a
+	| r > 5.08 && r <= 5.05 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(192,192,192)\" />\n" x y a
+	| r > 5.08 && r <= 5.1 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(204,204,0)\" />\n" x y a
+	| r > 5.1 && r <= 5.3 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(176,224,230)\" />\n" x y a
+	| r > 5.3 && r <= 5.6 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(245,245,220)\" />\n" x y a
+	| r > 5.6 && r <= 5.8 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(255,102,102)\" />\n" x y a
+	| r > 5.6 && r <= 6.0 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(138,43,226)\" />\n" x y a
+	| r > 6.0 && r <= 7.0 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(188,143,143)\" />\n" x y a
+	| r > 7.0 && r <= 8.0 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(0,224,44)\" />\n" x y a
+	| r > 8.0 && r <= 9.0 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(212,0,224)\" />\n" x y a
+	| r > 9 && r <= 10 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(33,146,224)\" />\n" x y a
+	| r > 10 && r <= 15 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(109,224,0)\" />\n" x y a
+	| r > 15 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(240,128,128)\" />" x y a
+	where 
+	r = a - 2
 	-}
-		
-	| r <= 5.5 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(2,1,255)\" />\n" x y r
-	| r > 5.5 && r <= 6 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(12,222,45)\" />\n" x y r
-	| r > 6 && r <= 11.5 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(222,111,45)\" />\n" x y r
-	| r > 11.5 && r <= 17 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(0,22,217)\" />\n" x y r
-	| r > 17 && r <= 22 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(2,22,45)\" />\n" x y r
-	| r > 22 && r <= 27 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(15,142,55)\" />\n" x y r
-	| r > 27 && r <= 32 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(51,102,255)\" />\n" x y r
-	| r > 32 && r <= 37 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(255,102,0)\" />\n" x y r
-	| r > 37 && r <= 42 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(255,152,120)\" />\n" x y r
-    | r > 42 && r <= 47 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(2,22,45)\" />\n" x y r
-	| r > 47 && r <= 52 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(211,22,245)\" />\n" x y r
-	| r > 52 && r <= 57 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(211,222,45)\" />\n" x y r
-	| r > 57 && r <= 62 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(11,22,45)\" />\n" x y r
-	| r > 62 && r <= 67 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(111,122,145)\" />\n" x y r
-	| r > 67 && r <= 72 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(55,122,205)\" />\n" x y r
-	| r > 72 && r <= 77 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(1,177,245)\" />\n" x y r
-	| r > 77 && r <= 82 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(167,66,45)\" />\n" x y r
-	| r > 82 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"60.1\" fill=\"rgb(0,255,165)\" />\n" x y -- Maior raio = 90 
+	
 	
 -- Configura o viewBox da imagem e coloca retangulo branco no fundo
-svgViewBox :: Int -> Int -> String
+svgViewBox :: Float -> Float -> String
 svgViewBox w h =
-        printf  "<svg width=\"%d\" height=\"%d\" viewBox=\"0 0 %d %d\"" w h w h ++ 
+        printf  "<svg width=\"%f\" height=\"%f\" viewBox=\"0 0 %f %f\"" w h w h ++ 
                 " version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\">\n" ++
-        printf "<rect x=\"0\" y=\"0\" width=\"%d\" height=\"%d\" style=\"fill:white;\"/>\n" w h
+        printf "<rect x=\"0\" y=\"0\" width=\"%f\" height=\"%f\" style=\"fill:white;\"/>\n" w h
