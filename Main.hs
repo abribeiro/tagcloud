@@ -16,15 +16,17 @@ imageHeight :: Float
 imageHeight = 350
 
 cons :: Float
-cons = (imageWidth + imageHeight) / 10000 * 0.9
+cons = (imageWidth + imageHeight) / 10000 * 0.8
 
 -- Funcao principal que faz leitura do dataset e gera arquivo SVG
 main :: IO ()
 main = do 
         strcontent <- readFile infile
-        let pairs = map (span (/= ' ')) (lines strcontent)
-            freqs = readInts (map snd pairs)		
-        writeFile outfile (svgCloudGen imageWidth imageHeight freqs)
+        let
+		pairs = map (span (/= ' ')) (lines strcontent)
+		freqs = readInts (map snd pairs)
+		palavras = map fst pairs
+        writeFile outfile (svgCloudGen imageWidth imageHeight freqs palavras)
         putStrLn "Ok!"
         where 
                 infile = "dataset.txt"
@@ -36,12 +38,13 @@ readInts :: [String] -> [Int]
 readInts ss = map read ss
 
 
+
 -- Gera o documento SVG da tag cloud, concatenando cabecalho, conteudo e rodape
-svgCloudGen :: Float -> Float -> [Int] -> String
-svgCloudGen w h dataset = 
+svgCloudGen :: Float -> Float -> [Int] -> [String] -> String
+svgCloudGen w h dataset palavras = 
         "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n" ++ 
         "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n" ++
-        (svgViewBox w h) ++ concat (gera dataset) ++ "</svg>\n"
+        (svgViewBox w h) ++ concat (gera dataset palavras) ++ "</svg>\n"
 
 
 spiral :: Float -> Point
@@ -61,7 +64,7 @@ intersecta ((x2,y2),r2) (((x1,y1),r1):lc)
 	a = r1 + r2
 
 calculaRaio :: Int -> Float
-calculaRaio d = (sqrt (fromIntegral d)) * 1.5 
+calculaRaio d = (sqrt (fromIntegral d)) * 1.6
 
 geraLista :: [Int] -> [Circle]
 geraLista [] = []
@@ -79,13 +82,13 @@ novoCirc lc r2 a
 	newPos = spiral (a + cons)
 	intersects = intersecta (newPos, r2) lc
 
-gera :: [Int] -> [String]
-gera [] = []
-gera d = svgBubbleGen (geraLista d)
+gera :: [Int] -> [String] -> [String]
+gera [] [] = []
+gera d p = svgBubbleGen (geraLista d) p
 
-svgBubbleGen:: [Circle] -> [String]
-svgBubbleGen [] = []
-svgBubbleGen (a:b) = svgCircle (fst a, snd a) ((rd (snd a)),(rd (fst (fst a))),(rd (snd (fst a)))) : svgBubbleGen b
+svgBubbleGen:: [Circle] -> [String] -> [String]
+svgBubbleGen [] [] = []
+svgBubbleGen (a:b) (h:p) = svgCircle (fst a, snd a) ((rd (fst (fst a))),(rd (snd a)),(rd (snd (fst a)))) h : svgBubbleGen b p
 
 
 rd :: Float -> Int
@@ -94,10 +97,22 @@ rd a = unGen (choose (0::Int, 255::Int)) (mkStdGen (floor a)) (floor a)
   
 -- Gera string representando um circulo em SVG. A cor do circulo esta fixa. 
 -- TODO: Alterar esta funcao para mostrar um circulo de uma cor fornecida como parametro.
-svgCircle :: Circle -> (Int, Int, Int) -> String
-svgCircle ((x,y),d) (r,g,b) = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(%d,%d,%d)\" />\n" x y d r g b
+svgCircle :: Circle -> (Int, Int, Int) -> String -> String
+svgCircle ((x,y),d) (r,g,b) str
+	| d > 15 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(%d,%d,%d)\" />\n<text x=\"%f\" y=\"%f\" style=\"font-family:Verdana;font-weight:bold; font-size:7;\" text-anchor=\"middle\" fill=\"white\"><tspan>%s</tspan><tspan dx=\"-%d\" dy=\"10\">[%d]</tspan></text>" x y d r g b x1 y1 p y2 s
+	| otherwise = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(%d,%d,%d)\" />" x y d r b g
+	where
+	--if str > 5
+	p = take 5 str ++ ".."
+	--p = if (length str) < 6 then x else str
+	--else p = str
+	s = round ((d / 1.6) ^ 2) :: Int
+	x1 = x --(round x) - (length (show s))
+	y1 = y -- 6.0
+	y2 = 18 + (length p)
 	
-    {-	
+	
+	{-	
 	| a > 1.00 && a <= 3.02 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(153,225,153)\" />\n" x y a
 	| a > 3.02 && a <= 6.04 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(229,24,255)\" />\n" x y a
 	| a > 6.04 && a <= 8.06 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(25,229,104)\" />\n" x y a
@@ -108,7 +123,7 @@ svgCircle ((x,y),d) (r,g,b) = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=
 	| a > 15.3 && a <= 17.6 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(25,245,220)\" />\n" x y a
 	| a > 17.6 && a <= 20.8 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(255,102,102)\" />\n" x y a
 	| a > 20.8 && a <= 25.0 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(138,43,226)\" />\n" x y a
-	| a > 25.0 && a <= 30.0 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(188,143,143)\" />\n" x y a
+	| a > 25.0 && a <= 30.0 = printf "<circle cx="%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(188,143,143)\" />\n" x y a
 	| a > 30.0 && a <= 40.0 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(0,224,44)\" />\n" x y a
 	| a > 40.0 && a <= 50.0 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(212,0,224)\" />\n" x y a
 	| a > 50 && a <= 60 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(33,146,224)\" />\n" x y a
