@@ -40,8 +40,6 @@ main = do
 readInts :: [String] -> [Int]
 readInts ss = map read ss
 
-
-
 -- Gera o documento SVG da tag cloud, concatenando cabecalho, conteudo e rodape
 svgCloudGen :: Float -> Float -> [Int] -> [String] -> String
 svgCloudGen w h dataset palavras = 
@@ -97,21 +95,22 @@ svgBubbleGen (a:b) (h:p) = svgCircle (fst a, snd a) ((rd (fst (fst a))),(rd (snd
 rd :: Float -> Int
 rd a = unGen (choose (0::Int, 255::Int)) (mkStdGen (floor a)) (floor a)
   
-  
+tStr :: String -> String
+tStr a 
+	| (length a) > 5 = take 5 a ++ ".."
+	| otherwise = a
+	
 -- Gera string representando um circulo em SVG. A cor do circulo esta fixa. 
 -- TODO: Alterar esta funcao para mostrar um circulo de uma cor fornecida como parametro.
-svgCircle :: Circle -> (Int, Int, Int) -> String -> String
+svgCircle :: Circle -> Color -> String -> String
 svgCircle ((x,y),d) (r,g,b) str
 	| d > 16 = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(%d,%d,%d)\" />\n<text x=\"%f\" y=\"%f\" style=\"font-family:Verdana;font-weight:bold; font-size:7;\" text-anchor=\"middle\" fill=\"white\"><tspan>%s</tspan><tspan dx=\"-%d\" dy=\"10\">[%d]</tspan></text>\n" x y d r g b x1 y1 p y2 s
 	| otherwise = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(%d,%d,%d)\"/>\n" x y d r b g
 	where
-	--if str > 5
-	p = take 5 str ++ ".."
-	--p = if (length str) < 6 then x else str
-	--else p = str
+	p = tStr str
 	s = round ((d / 1.6) ^ 2) :: Int
-	x1 = x --(round x) - (length (show s))
-	y1 = y -- 6.0
+	x1 = x
+	y1 = y
 	y2 = 18 + (length p)
 		
 -- Configura o viewBox da imagem e coloca retangulo branco no fundo
